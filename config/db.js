@@ -1,30 +1,41 @@
-import pg from 'pg';
-import dotenv from 'dotenv';
+import pg from 'pg'; // Usamos el cliente 'pg'
+import 'dotenv/config'; // Para usar process.env localmente
 
-dotenv.config();
-const { Pool } = pg;
+// 1. Obtener la URL de conexión desde las variables de entorno
+// Render usará la variable que configuraste en su dashboard.
+const DATABASE_URL = process.env.DATABASE_URL;
 
-const connectionString = process.env.DATABASE_URL;
-
-// Agregar validación
-if (!connectionString) {
-  console.error('❌ DATABASE_URL no está definido en las variables de entorno');
-  process.exit(1);
+// Validación básica (opcional, pero recomendado)
+if (!DATABASE_URL) {
+  console.error("❌ ERROR: La variable de entorno DATABASE_URL no está definida.");
+  // process.exit(1); 
 }
 
-console.log('✅ Conectando a la base de datos...');
-
-const pool = new Pool({
-  connectionString: connectionString,
+// 2. Crear la configuración del Pool de Conexiones
+// Usamos el objeto Pool de 'pg' para manejar múltiples conexiones
+const pool = new pg.Pool({
+    connectionString: DATABASE_URL,
+    // Opciones de configuración (opcional, pero recomendado para producción/Render)
+    max: 20, // Máximo de 20 clientes en el pool
+    idleTimeoutMillis: 30000, // Los clientes inactivos se cerrarán después de 30 segundos
+    connectionTimeoutMillis: 2000, // Tiempo de espera para la conexión inicial del cliente
 });
 
-// Probar la conexión
-pool.on('connect', () => {
-  console.log('✅ Conexión a PostgreSQL exitosa');
+// 3. Manejo de Errores y Conexión Inicial (Opcional, pero útil)
+pool.on('error', (err, client) => {
+    // Si un cliente dentro del pool lanza un error fatal
+    console.error('⚠️ Error inesperado en el pool de PG:', err);
+    // Nota: El pool no se detiene, sino que intenta recuperar la conexión
 });
 
-pool.on('error', (err) => {
-  console.error('❌ Error inesperado en el pool de PostgreSQL:', err);
-});
+// 4. Conexión de Prueba y Exportación
+pool.query('SELECT NOW()')
+    .then(res => {
+        console.log('✅ Conexión a PostgreSQL (pg Pool) establecida con éxito. Hora del servidor DB:', res.rows[0].now);
+    })
+    .catch(err => {
+        console.error('❌ Falló la conexión inicial a PostgreSQL:', err.message);
+    });
 
+// 5. Exportar la instancia del Pool para ser usada en el resto de la aplicación
 export default pool;
