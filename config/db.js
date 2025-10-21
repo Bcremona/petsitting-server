@@ -11,10 +11,19 @@ if (!DATABASE_URL) {
   // process.exit(1); 
 }
 
+// Configuración de SSL para entornos de producción como Render
+// Render se conecta a bases de datos externas que casi siempre requieren SSL.
+// 'rejectUnauthorized: false' es común en entornos Node.js para evitar errores
+// con certificados autofirmados, aunque es menos seguro.
+const sslConfig = process.env.NODE_ENV === 'production' 
+    ? { ssl: { rejectUnauthorized: false } }
+    : {}; // No usar SSL en desarrollo local si no es necesario
+
 // 2. Crear la configuración del Pool de Conexiones
 // Usamos el objeto Pool de 'pg' para manejar múltiples conexiones
 const pool = new pg.Pool({
     connectionString: DATABASE_URL,
+    ...sslConfig, // AÑADIDO: Configuración de SSL condicional
     // Opciones de configuración (opcional, pero recomendado para producción/Render)
     max: 20, // Máximo de 20 clientes en el pool
     idleTimeoutMillis: 30000, // Los clientes inactivos se cerrarán después de 30 segundos
