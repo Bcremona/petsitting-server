@@ -24,16 +24,6 @@ app.use('/api', contratacionesRoutes);
 app.use('/api', serviciosRoutes);
 app.use('/api', userRoutes);
 
-// Servir archivos estáticos del build de React en producción
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../build')));
-  
-  // Todas las rutas que NO sean /api/* devuelven el index.html de React
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../build', 'index.html'));
-  });
-}
-
 // Iniciar servidor
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en el puerto ${PORT}`);
